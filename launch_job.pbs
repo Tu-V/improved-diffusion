@@ -8,7 +8,7 @@
 #PBS -l wd
 
 module unload intel-compiler intel-mkl python python2 python3 hdf5
-module load python3/3.12.1 python3-as-python
+module load python3/3.11.0 python3-as-python
 module load openmpi
 cd ~
 source env/bin/activate
