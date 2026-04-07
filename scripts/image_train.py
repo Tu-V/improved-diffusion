@@ -26,6 +26,17 @@ def main():
     model, diffusion = create_model_and_diffusion(
         **args_to_dict(args, model_and_diffusion_defaults().keys())
     )
+    # Print model architecture
+    print(model)
+
+    # Tổng số params
+    total = sum(p.numel() for p in model.parameters())
+    print(f"Total params: {total/1e6:.2f}M")
+
+    # Chỉ trainable params
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"Trainable params: {trainable/1e6:.2f}M")
+
     model.to(dist_util.dev())
     schedule_sampler = create_named_schedule_sampler(args.schedule_sampler, diffusion)
 
