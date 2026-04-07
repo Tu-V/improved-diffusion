@@ -1,11 +1,17 @@
 #!/bin/bash
 #PBS -P mb26
-#PBS -l ncpus=48,ngpus=4,mem=96gb
+#PBS -l ncpus=12,ngpus=1,mem=24gb
 #PBS -l storage=scratch/mb26
-#PBS -l walltime=4:00:00
+#PBS -l walltime=1:00:00
 #PBS -q gpuvolta
 #PBS -m be
 #PBS -l wd
+
+module unload intel-compiler intel-mkl python python2 python3 hdf5
+module load python3/3.12.1 python3-as-python
+module load openmpi
+cd ~
+source env/bin/activate
 
 cd /scratch/mb26/tv8394/workspace/improved-diffusion
 bash run.sh
