@@ -2,12 +2,15 @@
 #PBS -P mb26
 #PBS -l ncpus=48,ngpus=4,mem=96gb
 #PBS -l storage=scratch/mb26
-#PBS -l walltime=8:00:00
+#PBS -l walltime=4:00:00
 #PBS -q gpuhopper
 #PBS -m be
 #PBS -l wd
 
-cd workspace/improved-diffusion
+cd /scratch/mb26/tv8394/workspace/improved-diffusion
+
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Job started on $(hostname)" >> log.txt
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] GPUs: $(nvidia-smi --query-gpu=name --format=csv,noheader | tr '\n' ',')" >> log.txt
 
 export OPENAI_LOGDIR="simple-shapes-5k-checkpoints"
 rm -rf $OPENAI_LOGDIR
