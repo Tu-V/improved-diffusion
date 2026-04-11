@@ -22,7 +22,7 @@ from improved_diffusion.script_util import (
 
 def main():
     args = create_argparser().parse_args()
-
+    print(args)
     dist_util.setup_dist()
     logger.configure()
 
