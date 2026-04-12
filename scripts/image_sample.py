@@ -39,6 +39,8 @@ def main():
     logger.log("sampling...")
     all_images = []
     all_labels = []
+    save_interval = 1000  # save every N samples
+
     while len(all_images) * args.batch_size < args.num_samples:
         model_kwargs = {}
         if args.class_cond:
@@ -68,7 +70,21 @@ def main():
             ]
             dist.all_gather(gathered_labels, classes)
             all_labels.extend([labels.cpu().numpy() for labels in gathered_labels])
-        logger.log(f"created {len(all_images) * args.batch_size} samples")
+
+        num_so_far = len(all_images) * args.batch_size
+        logger.log(f"created {num_so_far} samples")
+
+        # Save checkpoint every save_interval samples
+        if dist.get_rank() == 0 and num_so_far % save_interval == 0:
+            arr_so_far = np.concatenate(all_images, axis=0)
+            shape_str = "x".join([str(x) for x in arr_so_far.shape])
+            out_path = os.path.join(logger.get_dir(), f"samples_{shape_str}.npz")
+            logger.log(f"saving checkpoint to {out_path}")
+            if args.class_cond:
+                label_arr_so_far = np.concatenate(all_labels, axis=0)
+                np.savez(out_path, arr_so_far, label_arr_so_far)
+            else:
+                np.savez(out_path, arr_so_far)
 
     arr = np.concatenate(all_images, axis=0)
     arr = arr[: args.num_samples]
@@ -84,7 +100,8 @@ def main():
         else:
             np.savez(out_path, arr)
 
-    dist.barrier()
+    if dist.get_world_size() > 1:
+        dist.barrier()
     logger.log("sampling complete")
 
 
