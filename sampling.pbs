@@ -1,0 +1,27 @@
+#!/bin/bash
+#PBS -P mb26
+#PBS -l ncpus=12,ngpus=1,mem=24gb
+#PBS -l storage=scratch/mb26
+#PBS -l walltime=4:00:00
+#PBS -q gpuvolta
+#PBS -m be
+#PBS -l wd
+
+cd
+source v100_py3.12/bin/activate
+
+cd /scratch/mb26/tv8394/workspace/improved-diffusion
+
+
+#sampling
+export OPENAI_LOGDIR="simple-shapes-5k-checkpoints-80000s-sampling"
+rm -rf $OPENAI_LOGDIR
+MODEL_FLAGS="--image_size 64 --num_channels 64 --num_res_blocks 3"
+DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 10000 --use_ddim true"
+TRAIN_FLAGS="--lr 1e-4 --batch_size 64 --lr_anneal_steps 125000"
+
+python scripts/image_sample.py --model_path simple-shapes-5k-checkpoints/ema_0.9999_080000.pt $MODEL_FLAGS $DIFFUSION_FLAGS
+
+# NUM_GPUS=4
+# mpiexec -n $NUM_GPUS python scripts/image_sample.py --model_path /path/to/model.pt $MODEL_FLAGS $DIFFUSION_FLAGS
+
