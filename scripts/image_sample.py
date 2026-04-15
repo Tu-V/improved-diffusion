@@ -40,6 +40,7 @@ def main():
     all_images = []
     all_labels = []
     save_interval = 1000  # save every N samples
+    last_saved = 0
 
     while len(all_images) * args.batch_size < args.num_samples:
         model_kwargs = {}
@@ -61,9 +62,10 @@ def main():
         sample = sample.permute(0, 2, 3, 1)
         sample = sample.contiguous()
 
-        gathered_samples = [th.zeros_like(sample) for _ in range(dist.get_world_size())]
-        dist.all_gather(gathered_samples, sample)  # gather not supported with NCCL
-        all_images.extend([sample.cpu().numpy() for sample in gathered_samples])
+        # Cast to int32 for all_gather (NCCL does not support uint8)
+        gathered_samples = [th.zeros_like(sample.to(th.int32)) for _ in range(dist.get_world_size())]
+        dist.all_gather(gathered_samples, sample.to(th.int32))
+        all_images.extend([s.to(th.uint8).cpu().numpy() for s in gathered_samples])
         if args.class_cond:
             gathered_labels = [
                 th.zeros_like(classes) for _ in range(dist.get_world_size())
@@ -75,7 +77,7 @@ def main():
         logger.log(f"created {num_so_far} samples")
 
         # Save checkpoint every save_interval samples
-        if dist.get_rank() == 0 and num_so_far % save_interval == 0:
+        if dist.get_rank() == 0 and num_so_far - last_saved >= save_interval:
             arr_so_far = np.concatenate(all_images, axis=0)
             shape_str = "x".join([str(x) for x in arr_so_far.shape])
             out_path = os.path.join(logger.get_dir(), f"samples_{shape_str}.npz")
@@ -85,6 +87,7 @@ def main():
                 np.savez(out_path, arr_so_far, label_arr_so_far)
             else:
                 np.savez(out_path, arr_so_far)
+            last_saved = num_so_far
 
     arr = np.concatenate(all_images, axis=0)
     arr = arr[: args.num_samples]

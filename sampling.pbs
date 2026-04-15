@@ -12,6 +12,9 @@ source v100_py3.12/bin/activate
 
 cd /scratch/mb26/tv8394/workspace/improved-diffusion
 
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] Job started on $(hostname)" >> log.txt
+echo "[$(date '+%Y-%m-%d %H:%M:%S')] GPUs: $(nvidia-smi --query-gpu=name --format=csv,noheader | tr '\n' ',')" >> log.txt
+
 MODEL_FLAGS="--image_size 64 --num_channels 64 --num_res_blocks 3"
 DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 10000 --timestep_respacing 100"
 
