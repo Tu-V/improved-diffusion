@@ -1,6 +1,6 @@
 #!/bin/bash
 #PBS -P mb26
-#PBS -l ncpus=96,ngpus=8,mem=160gb
+#PBS -l ncpus=24,ngpus=2,mem=48gb
 #PBS -l storage=scratch/mb26
 #PBS -l walltime=4:00:00
 #PBS -q gpuvolta
@@ -18,7 +18,7 @@ echo "[$(date '+%Y-%m-%d %H:%M:%S')] GPUs: $(nvidia-smi --query-gpu=name --forma
 MODEL_FLAGS="--image_size 64 --num_channels 64 --num_res_blocks 3"
 DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 10000 --timestep_respacing 100"
 
-NUM_GPUS=8
+NUM_GPUS=2
 
 for STEP in 020000 030000 040000 050000 060000 070000 080000 090000 100000 110000 120000 130000 140000 150000 160000; do
     CKPT="simple-shapes-5k-checkpoints/ema_0.9999_${STEP}.pt"
