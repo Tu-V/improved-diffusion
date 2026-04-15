@@ -1,8 +1,18 @@
-from PIL import Image
+import os
+import glob
 import numpy as np
+from PIL import Image
 
-data = np.load("/Users/admin/workspace/improved-diffusion/simple-shapes-5k-checkpoints-10000s-sampling-250steps/samples_2000x64x64x3.npz")
-arr = data["arr_0"]
+base_dir = "/Users/admin/workspace/improved-diffusion"
 
-for i, img in enumerate(arr):
-    Image.fromarray(img).save(f"/Users/admin/workspace/improved-diffusion/simple-shapes-5k-checkpoints-10000s-sampling-250steps/sample_{i:03d}.png")
+for npz_path in sorted(glob.glob(os.path.join(base_dir, "*sampling*", "samples_2000x*.npz"))):
+    folder = os.path.dirname(npz_path)
+    out_dir = os.path.join(folder, "images")
+    os.makedirs(out_dir, exist_ok=True)
+
+    data = np.load(npz_path)
+    arr = data["arr_0"]
+    print(f"{npz_path} -> {len(arr)} images -> {out_dir}")
+
+    for i, img in enumerate(arr):
+        Image.fromarray(img).save(os.path.join(out_dir, f"sample_{i:05d}.png"))
