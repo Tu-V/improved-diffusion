@@ -12,15 +12,13 @@ source v100_py3.12/bin/activate
 
 cd /scratch/mb26/tv8394/workspace/improved-diffusion
 
-
-#sampling
-export OPENAI_LOGDIR="simple-shapes-5k-checkpoints-10000s-sampling-250steps"
-rm -rf $OPENAI_LOGDIR
 MODEL_FLAGS="--image_size 64 --num_channels 64 --num_res_blocks 3"
-DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 10000 --timestep_respacing ddim250"
+DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 2000 --timestep_respacing 250"
 
-python scripts/image_sample.py --model_path simple-shapes-5k-checkpoints/ema_0.9999_010000.pt $MODEL_FLAGS $DIFFUSION_FLAGS
-
-# NUM_GPUS=4
-# mpiexec -n $NUM_GPUS python scripts/image_sample.py --model_path /path/to/model.pt $MODEL_FLAGS $DIFFUSION_FLAGS
-
+for STEP in 20000 40000 60000; do
+    CKPT="simple-shapes-5k-checkpoints/ema_0.9999_0${STEP}.pt"
+    export OPENAI_LOGDIR="simple-shapes-5k-checkpoints-${STEP}s-sampling-250steps"
+    rm -rf $OPENAI_LOGDIR
+    echo "=== Sampling from step ${STEP} ==="
+    python scripts/image_sample.py --model_path $CKPT $MODEL_FLAGS $DIFFUSION_FLAGS
+done
