@@ -15,14 +15,14 @@ cd /scratch/mb26/tv8394/workspace/improved-diffusion
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] Job started on $(hostname)" >> log.txt
 echo "[$(date '+%Y-%m-%d %H:%M:%S')] GPUs: $(nvidia-smi --query-gpu=name --format=csv,noheader | tr '\n' ',')" >> log.txt
 
-MODEL_FLAGS="--image_size 64 --num_channels 8 --num_res_blocks 3"
-DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 10000 --timestep_respacing 100"
+MODEL_FLAGS="--image_size 64 --num_channels 64 --num_res_blocks 3"
+DIFFUSION_FLAGS="--diffusion_steps 1000 --noise_schedule linear --num_samples 10000 --timestep_respacing 100  --use_ddim True"
 
 NUM_GPUS=4
 
 for STEP in 020000 030000 040000 050000 060000 070000 080000 090000 100000 110000 120000 130000 140000 150000 160000; do
-    CKPT="simple-shapes-5k-output/num_channel_8/checkpoints/ema_0.9999_${STEP}.pt"
-    export OPENAI_LOGDIR="simple-shapes-5k-output/num_channel_8/samling/checkpoint-${STEP}s-sampling-100steps"
+    CKPT="simple-shapes-5k-output/num_channel_64/checkpoints/ema_0.9999_${STEP}.pt"
+    export OPENAI_LOGDIR="simple-shapes-5k-output/num_channel_64/samling/checkpoint-${STEP}s-sampling-100steps-ddim"
     echo "=== Sampling from step ${STEP} ==="
     mpiexec -n $NUM_GPUS  python scripts/image_sample.py --model_path $CKPT $MODEL_FLAGS $DIFFUSION_FLAGS
 done
