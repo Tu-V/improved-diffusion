@@ -228,6 +228,8 @@ def main():
                 (args.batch_size, 3, args.image_size, args.image_size),
                 clip_denoised=args.clip_denoised,
                 model_kwargs=model_kwargs,
+                device=dist_util.dev(),
+                progress=(dist.get_rank() == 0),
             )
             sample = ((sample + 1) * 127.5).clamp(0, 255).to(th.uint8)
             sample = sample.permute(0, 2, 3, 1).contiguous()
