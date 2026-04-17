@@ -11,9 +11,21 @@ from mpi4py import MPI
 import torch as th
 import torch.distributed as dist
 
-# Change this to reflect your cluster layout.
-# The GPU for a given rank is (rank % GPUS_PER_NODE).
-GPUS_PER_NODE = th.cuda.device_count() if th.cuda.is_available() else 1
+def _get_local_rank():
+    """
+    Get the node-local rank (which GPU to use on this node).
+    Priority:
+      1. OMPI_COMM_WORLD_LOCAL_RANK  (OpenMPI, used on Gadi)
+      2. MPI_LOCALRANKID              (MPICH)
+      3. LOCAL_RANK                   (PyTorch launcher)
+      4. global_rank % device_count   (fallback)
+    """
+    for env_var in ("OMPI_COMM_WORLD_LOCAL_RANK", "MPI_LOCALRANKID", "LOCAL_RANK"):
+        val = os.environ.get(env_var)
+        if val is not None:
+            return int(val)
+    gpus = th.cuda.device_count() if th.cuda.is_available() else 1
+    return MPI.COMM_WORLD.Get_rank() % gpus
 
 SETUP_RETRY_COUNT = 3
 
@@ -44,9 +56,10 @@ def setup_dist():
 def dev():
     """
     Get the device to use for torch.distributed.
+    Uses local rank so each rank on a node maps to a unique GPU.
     """
     if th.cuda.is_available():
-        return th.device(f"cuda:{MPI.COMM_WORLD.Get_rank() % GPUS_PER_NODE}")
+        return th.device(f"cuda:{_get_local_rank()}")
     return th.device("cpu")
 
 
