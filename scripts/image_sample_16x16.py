@@ -84,7 +84,7 @@ ZOOM = 10   # upscale factor for saved PNGs (16→160 px)
 def _to_uint8(tensor_nchw):
     """(N,C,H,W) float [-1,1] → (N,H,W,C) uint8 numpy."""
     return (((tensor_nchw + 1) * 127.5).clamp(0, 255)
-            .to(th.uint8).permute(0, 2, 3, 1).cpu().numpy())
+            .to(th.uint8).permute(0, 2, 3, 1).contiguous().cpu().numpy())
 
 
 def _upscale(img_hwc, zoom=ZOOM):
