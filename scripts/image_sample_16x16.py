@@ -25,12 +25,12 @@ Usage:
 """
 
 import os
+import sys
 
 import numpy as np
 import torch as th
 import torch.distributed as dist
 from PIL import Image as PILImage
-from scipy import ndimage
 
 from improved_diffusion import dist_util, logger
 from improved_diffusion.script_util import (
@@ -41,26 +41,12 @@ from improved_diffusion.script_util import (
     args_to_dict,
 )
 
-
-# ---------------------------------------------------------------------------
-# Hallucination detection — tuned for 16x16  (5-px-wide columns)
-# ---------------------------------------------------------------------------
-
-COLUMN_SLICES     = [(0, 5), (5, 10), (10, 15)]
-COLUMN_NAMES      = ["triangle", "square", "pentagon"]
-BRIGHT_PERCENTILE = 80
-MIN_SHAPE_AREA    = 3
-
-
-def _count_blobs(col_img_f32):
-    thresh = np.percentile(col_img_f32, BRIGHT_PERCENTILE)
-    if thresh >= col_img_f32.max():
-        return 0
-    binary = (col_img_f32 >= thresh).astype(bool)
-    struct = ndimage.generate_binary_structure(2, 2)
-    labeled, n = ndimage.label(binary, structure=struct)
-    return sum(1 for r in range(1, n + 1)
-               if (labeled == r).sum() >= MIN_SHAPE_AREA)
+# ── Import shared hallucination detector ─────────────────────────────────────
+_DETECTOR_PATH = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "flow_matching")
+)
+sys.path.insert(0, _DETECTOR_PATH)
+from hallucination_detector import analyze_image as _analyze_image  # noqa: E402
 
 
 def check_hallucination(img_uint8):
@@ -68,10 +54,8 @@ def check_hallucination(img_uint8):
     img_uint8: (H, W, 3) uint8.
     Returns (is_hall: bool, blobs: dict {col_name: count}).
     """
-    gray  = img_uint8[:, :, 0].astype(np.float32)
-    blobs = {name: _count_blobs(gray[:, c0:c1])
-             for (c0, c1), name in zip(COLUMN_SLICES, COLUMN_NAMES)}
-    return any(v >= 2 for v in blobs.values()), blobs
+    result = _analyze_image(img_uint8)
+    return result["is_hallucination"], result["col_blobs"]
 
 
 # ---------------------------------------------------------------------------

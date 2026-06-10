@@ -104,3 +104,37 @@ class ImageDataset(Dataset):
         if self.local_classes is not None:
             out_dict["y"] = np.array(self.local_classes[idx], dtype=np.int64)
         return np.transpose(arr, [2, 0, 1]), out_dict
+
+
+if __name__ == "__main__":
+    DATA_DIR   = "/Users/admin/workspace/diffusion-model-hallucination/simple-datasets/simple-shapes-16x16"
+    IMAGE_SIZE = 16
+    N_SHOW     = 3   # số ảnh in ra
+
+    all_files = _list_image_files_recursively(DATA_DIR)
+    print(f"Total images found: {len(all_files)}")
+    print(f"First few paths: {all_files[:3]}\n")
+
+    dataset = ImageDataset(IMAGE_SIZE, all_files, shard=0, num_shards=1)
+
+    np.set_printoptions(linewidth=200, formatter={"float": lambda x: f"{x:6.3f}"})
+
+    for i in range(N_SHOW):
+        tensor_chw, _ = dataset[i]   # (C, H, W) float32 in [-1, 1]
+        path = all_files[i]
+
+        print(f"=== Image {i}  |  file: {path}")
+        print(f"    tensor shape : {tensor_chw.shape}  dtype={tensor_chw.dtype}")
+        print(f"    value range  : [{tensor_chw.min():.3f}, {tensor_chw.max():.3f}]")
+
+        # Channel 0 (R) as model sees it — [-1, 1] float
+        print(f"    channel-0 (model input, float [-1,1]):")
+        print(tensor_chw[0])
+
+        # Back to uint8 for sanity check
+        uint8 = ((tensor_chw[0] + 1) * 127.5).clip(0, 255).astype(np.uint8)
+        print(f"    channel-0 (back to uint8 [0,255]):")
+        np.set_printoptions(linewidth=200, formatter={"int": lambda x: f"{x:3d}"})
+        print(uint8)
+        np.set_printoptions(linewidth=200, formatter={"float": lambda x: f"{x:6.3f}"})
+        print()
